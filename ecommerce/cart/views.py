@@ -27,11 +27,24 @@ def add_to_cart(request, slug):
 
 
 def remove_from_cart(request, slug):
-	item = get_object_or_404(Product,slug=slug)
-	cart_qs = Cart.objects.filter(user=request.user, item=item)
+	item = get_object_or_404(Product,slug=slug)  #product name on the basis of slug
+	cart_qs = Cart.objects.filter(user=request.user, item=item)    #cart_qs <-- (product name in cart)
 	if cart_qs.exists():
-		cart_qs.delete()
+		cart = cart_qs[0]
+		if cart.quantity>1:
+			cart.quantity-=1
+			cart.save()
+		else:
+			cart_qs.delete()
+	order_qs = Order.objects.filter(user=request.user, ordered=False)    #removing the order as well 
+	if order_qs.exists():
+		uzer = order_qs[0]
+		if uzer.orderitems.filter(item__slug=item.slug).exists():
+			uzer.orderitems.remove((Cart.objects.filter(item=item, user=request.user))[0])
+			messages.info(request,"This item has been removed from your cart")
+		else:
+			messages.info(request,"This item is not in your cart")
+		return redirect("mainapp:home")
 	else:
-		messages.info("The iten was not in your cart")
-	return redirect("mainapp:home")
-	
+		messages.info(request,"You do not have an active order")
+	    return redirect("mainapp:home")
