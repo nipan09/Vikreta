@@ -47,4 +47,16 @@ def remove_from_cart(request, slug):
 		return redirect("mainapp:home")
 	else:
 		messages.info(request,"You do not have an active order")
-	    return redirect("mainapp:home")
+		return redirect("mainapp:home")
+
+
+def cart_view():
+	carts = Cart.objects.filter(user=request.user)
+	orders = Order.objects.filter(user=request.user, filter=False)
+	if carts.exists():
+		order = orders[0]
+		return render(request,'cart/cart.html',{'carts':carts, 'order':order})
+	else:
+		messages.warning(request, "Your cart is empty")
+		return redirect()
+		
